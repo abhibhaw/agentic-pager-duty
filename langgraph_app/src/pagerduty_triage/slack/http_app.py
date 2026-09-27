@@ -54,6 +54,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, PlainTextResponse, Response
 from starlette.routing import Route
 
+from pagerduty_triage import acp
 from pagerduty_triage.slack.config import SlackSettings, load_slack_settings
 from pagerduty_triage.slack.handler import handle_interaction
 
@@ -209,7 +210,13 @@ async def run_finished(request: Request) -> Response:
     return PlainTextResponse("ok", background=BackgroundTask(_sweep))
 
 
+# The lifespan is how this deployment registers with the Agent Production
+# Control Plane: LangGraph Platform enters a custom app's lifespan once in every
+# server and queue-worker process. Registration runs on a background thread, so
+# startup is not delayed and a control-plane outage cannot fail readiness. See
+# acp.py.
 app = Starlette(
+    lifespan=acp.lifespan,
     routes=[
         Route(INTERACTIONS_PATH, interactions, methods=["POST"]),
         Route(HEALTH_PATH, health, methods=["GET"]),

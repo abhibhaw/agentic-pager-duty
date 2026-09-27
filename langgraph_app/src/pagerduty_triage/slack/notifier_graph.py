@@ -18,6 +18,7 @@ from typing import Any, TypedDict
 
 from langgraph.graph import END, START, StateGraph
 
+from pagerduty_triage.acp import observe
 from pagerduty_triage.slack.config import load_slack_settings
 from pagerduty_triage.slack.notifier import notify_parked_gates
 
@@ -85,4 +86,4 @@ def make_notifier_graph():
     builder.add_node("notify", notify_node)
     builder.add_edge(START, "notify")
     builder.add_edge("notify", END)
-    return builder.compile()
+    return observe(builder.compile())

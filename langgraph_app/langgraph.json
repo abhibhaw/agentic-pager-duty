@@ -1,5 +1,8 @@
 {
-  "dependencies": ["."],
+  "dependencies": [
+    ".",
+    "./vendor/acp-sdk"
+  ],
   "graphs": {
     "triage": "./src/pagerduty_triage/agent.py:make_graph",
     "poller": "./src/pagerduty_triage/poller_graph.py:make_poller_graph",
@@ -11,4 +14,3 @@
   "env": ".env",
   "python_version": "3.12"
 }
-

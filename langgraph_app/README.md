@@ -99,6 +99,10 @@ the ledger recording it. Small, not zero. Closing it properly means the
 | `ZOHO_REFRESH_TOKEN` | Long-lived | Minted once with `access_type=offline` **and** `prompt=consent` — without `prompt=consent` a re-auth silently returns no refresh token |
 | `ZOHO_ORG_ID` | `orgId` header | Token is bound to one org; a mismatch is **403 `OAUTH_ORG_MISMATCH`**, not 401 — keep it out of the token-refresh path |
 | `GITHUB_TOKEN` | Issue creation | `issues:write` on `devtron-labs/sprint-tasks` **only**. It does not need repo read, and must not have it |
+| `ACP_ENDPOINT` | Agent Production Control Plane base URL | `https://autopilot-new.abhibhaw.com`. Never plain http, never `ACP_ALLOW_INSECURE_HTTP` |
+| `ACP_CREDENTIAL` | Workload credential for discovery | Must grant agent key `pagerduty-triage`, or registration is a 403. From the secret store; never logged |
+| `ACP_OTLP_TRACES_ENDPOINT` | Optional OTLP traces URL | `https://autopilot-new.abhibhaw.com/v1/traces` |
+| `ACP_RELEASE_DIGEST` / `ACP_INSTANCE_KEY` | Optional | Release label on heartbeats (default: the platform's git SHA); per-replica key (default: hostname) |
 
 Zoho OAuth scopes, minimum set:
 
@@ -134,6 +138,36 @@ langgraph dev                        # http://localhost:2024
 
 `ZOHO_TRANSPORT=fake` (the default) runs the whole graph against the in-memory
 stub, so you can exercise both gates without touching Zoho.
+
+## Control-plane discovery (autopilot)
+
+`src/pagerduty_triage/acp.py` makes this deployment show up in the Agent
+Production Control Plane's Agents inventory. Discovery is explicit — the
+process registers with `ACP_CREDENTIAL` and heartbeats; nothing is patched or
+auto-instrumented. The module docstring has the full reasoning; the short form:
+
+* **Registers once per process** from the Starlette lifespan of the custom
+  app, which the platform enters in the API server and in every queue worker.
+  Registration runs on a daemon thread so it cannot delay readiness.
+* **Heartbeats** once after registering, then every ~60 s from the SDK's own
+  thread. A process that stops heartbeating shows stale after ~180 s.
+* **One control-plane run per platform run** of `triage`, `poller` and
+  `slack_notifier`, identified by the platform's run UUID only. A gate parking
+  on `interrupt()` is a normal end; the resume is a new run.
+* **Flushes** in the lifespan's shutdown half (the container stop hook).
+* **Telemetry never crashes the agent.** Any failure logs a fixed message plus
+  the exception type and the agent keeps running *unobserved* — so a clean
+  process proves nothing. Look for `acp: registered workload_id=… instance_key=…`
+  in the logs, then for the workload in the Agents list.
+
+Nothing about a ticket — text, ids, subjects, customer — is sent; tenant and
+environment come from the credential server-side.
+
+`acp-sdk` is not on PyPI and the build cannot reach the private
+`abhibhaw/autopilot` repo, so it is **vendored** in `vendor/acp-sdk/` and
+listed as its own entry in `langgraph.json` `dependencies`. Its OpenTelemetry
+pins are widened locally so it co-installs with `langgraph-api` — see
+`vendor/acp-sdk/VENDORED.md` for provenance, the patch, and how to re-sync.
 
 ## Deploying
 

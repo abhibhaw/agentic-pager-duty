@@ -1,0 +1,27 @@
+[project]
+name = "acp-sdk"
+version = "0.1.0"
+description = "Python SDK for workloads governed by the Agent Production Control Plane"
+# Runs inside partner workloads, so it is not tied to the control plane's Python. L9-01 set the
+# range: 3.11 is the oldest CPython still in security support after 3.10 reaches end of life in
+# October 2026, and LangGraph 1.2 supports it.
+requires-python = ">=3.11"
+# Pins recorded in docs/16-decisions-sources.md#python-packages (L9-02). The three OTel packages
+# are released together and share one version.
+# VENDORED PATCH (agentic-pager-duty): upstream pins the three OTel packages to ==1.44.0, which
+# cannot co-install with langgraph-api 0.15.x (it requires opentelemetry-sdk>=1.42.1,<1.43). Widened
+# to the range the SDK's own test suite was run and passed against: 1.42.1 and 1.44.0. See
+# VENDORED.md.
+dependencies = [
+  "httpx==0.28.1",
+  "opentelemetry-api>=1.42.1,<1.45",
+  "opentelemetry-sdk>=1.42.1,<1.45",
+  "opentelemetry-exporter-otlp-proto-http>=1.42.1,<1.45",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.18,<0.13"]
+build-backend = "uv_build"
+
+# VENDORED PATCH: upstream [tool.ruff] / [tool.mypy] removed; they extend the autopilot repo root
+# (../../pyproject.toml), which does not exist here. See VENDORED.md.

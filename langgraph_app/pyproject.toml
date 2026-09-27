@@ -22,6 +22,11 @@ dependencies = [
     # platform runtime already ships Starlette; declared so `uvicorn
     # pagerduty_triage.slack.http_app:app` also works standalone.
     "starlette>=0.37",
+    # Agent Production Control Plane (autopilot) discovery: registration,
+    # heartbeats and run events. Not on PyPI, and the deploy build cannot reach
+    # the private autopilot repo, so it is vendored in vendor/acp-sdk/ and
+    # installed from there -- see vendor/acp-sdk/VENDORED.md and acp.py.
+    "acp-sdk==0.1.0",
 ]
 
 [project.optional-dependencies]
@@ -31,6 +36,12 @@ dev = ["pytest>=8", "pytest-asyncio>=0.24"]
 # not need one. It is only for running the graph on a laptop, which is what
 # LIVERUN.md does, so it gets its own extra rather than being pulled into CI.
 local = ["langgraph-cli[inmem]>=0.2"]
+
+# Resolve acp-sdk from the vendored copy, not an index (uv only; pip and the
+# platform build get it from `dependencies` in langgraph.json and
+# requirements.txt).
+[tool.uv.sources]
+acp-sdk = { path = "vendor/acp-sdk" }
 
 [build-system]
 requires = ["setuptools>=68"]

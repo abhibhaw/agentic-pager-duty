@@ -38,6 +38,7 @@ from typing import Any
 
 from deepagents import create_deep_agent
 
+from pagerduty_triage.acp import observe
 from pagerduty_triage.prompts import (
     MAIN_AGENT_PROMPT,
     PAGER_SCRIBE_PROMPT,
@@ -315,8 +316,11 @@ def make_graph():
     A factory rather than a module-level singleton so that import of this
     module — which happens in tests — does not require a configured
     environment.
+
+    `observe` reports each platform run to the Agent Production Control Plane
+    (see acp.py). It sends the run's UUID and outcome, never its content.
     """
-    return build_agent(build_deps())
+    return observe(build_agent(build_deps()))
 
 
 # `langgraph.json` may point at either `agent.py:graph` or `agent.py:make_graph`.

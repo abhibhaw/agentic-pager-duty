@@ -20,6 +20,7 @@ from typing import TypedDict
 
 from langgraph.graph import END, START, StateGraph
 
+from pagerduty_triage.acp import observe
 from pagerduty_triage.agent import build_deps
 from pagerduty_triage.poller import ThreadConflict, poll_once
 from pagerduty_triage.tools.deps import TICKET_CONTEXT_KEY
@@ -147,4 +148,4 @@ def make_poller_graph():
     builder.add_node("poll", poll_node)
     builder.add_edge(START, "poll")
     builder.add_edge("poll", END)
-    return builder.compile()
+    return observe(builder.compile())

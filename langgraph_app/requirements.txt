@@ -17,3 +17,7 @@ httpx>=0.27
 
 # The Slack interaction endpoint served as a LangGraph custom route.
 starlette>=0.37
+
+# Agent Production Control Plane discovery (src/pagerduty_triage/acp.py).
+# Vendored from the private autopilot repo; see vendor/acp-sdk/VENDORED.md.
+./vendor/acp-sdk
